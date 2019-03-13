@@ -51,7 +51,7 @@ const Choice = (props) => {
 	return (
   	<div>
       {/*make this look good*/}
-      <button type="button" className="btn btn-outline-primary inlineBlock p-1 m-3 choice">
+      <button type="button" className="btn btn-outline-primary inlineBlock p-1 m-3 choice" onClick={() => props.weaponSetFunction(props.choice)}>
         {props.choice.icon}
         <br/>
         {props.choice.name}
@@ -88,7 +88,9 @@ class WeaponDamageCalculator extends React.Component {
     orderedChoiceButtonTitles: ["Weapons", "Talents", "Runes"],
     choiceColumnInfo: {title: "Weapons", collection: "WeaponData", leftButtonTitle: "Runes", rightButtonTitle: "Talents"},
     dataToLoadName: "Weapons",
-    selectedWeapon: []
+    selectedWeapon: [],
+    selectedRunes: [],
+    selectedTalents: []
   };
 
   // when component mounts, first thing it does is fetch all existing data in our db
@@ -159,6 +161,10 @@ class WeaponDamageCalculator extends React.Component {
                                                     rightButtonTitle: this.getLeftAndRightButtonTitleForChoiceColumn(titleClicked).right}}));
   };
 
+  setSelectedWeapon = (weapon) => {
+    this.setState({selectedWeapon: weapon});
+  }
+
   getDataByName = (name) => {
     let dataToReturn;
     var names = this.state.orderedChoiceButtonTitles;
@@ -180,11 +186,11 @@ class WeaponDamageCalculator extends React.Component {
   };
 
   calculateDPS = (weapon) => {
-    return ((weapon.damage*weapon.fireRate)/60) + weapon.extraDamage;
+    return (weapon.damage*weapon.fireRate) + weapon.extraDamage;
   };
 
   render() {
-    const { choiceColumnInfo, dataToLoadName, selectedWeapon } = this.state;
+    const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents } = this.state;
     const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon)} unit={""}/>]; 
 
     return (
@@ -208,7 +214,7 @@ class WeaponDamageCalculator extends React.Component {
         </div>
         <div className="row mainContentRow">
           <ChoiceContainerColumn title={choiceColumnInfo.title} options={this.getDataByName(dataToLoadName).map(dat => (
-            <Choice choice={dat} />
+            <Choice choice={dat} weaponSetFunction={this.setSelectedWeapon} />
           ))} buttonLeftTitle={choiceColumnInfo.leftButtonTitle} buttonRightTitle={choiceColumnInfo.rightButtonTitle} choiceButtonClicked={this.choiceButtonClicked}/>           
           <div className="col border border-secondary">
             <InfoHeader weapon={"Slug Rifle"} talents={"headshot damage"} runes={"head shot damage"}/>
