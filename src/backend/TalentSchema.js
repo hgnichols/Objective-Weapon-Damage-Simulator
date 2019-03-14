@@ -6,8 +6,8 @@ let TalentSchema = new Schema({
     name: String,
     damageModifier: Number,
     modifierType: String,
-    weaponName: Number,
-    icon: String
+    class: String,
+    Weapons: String
 }, {collection: 'TalentData'});
 
 // export the new Schema so we could modify it using Node.js

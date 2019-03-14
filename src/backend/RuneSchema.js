@@ -5,8 +5,7 @@ let RuneSchema = new Schema({
     id: Number,
     name: String,
     damageModifier: Number,
-    modifierType: String,
-    icon: String
+    modifierType: String
 }, {collection: 'RuneData'});
 
 // export the new Schema so we could modify it using Node.js

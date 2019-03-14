@@ -6,8 +6,6 @@ const logger = require("morgan");
 const WeaponSchema = require("./WeaponSchema");
 const TalentSchema = require("./TalentSchema");
 const RuneSchema = require("./RuneSchema");
-
-
 const API_PORT = 3001;
 const app = express();
 const router = express.Router();

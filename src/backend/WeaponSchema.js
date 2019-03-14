@@ -10,8 +10,7 @@ let WeaponSchema = new Schema({
     weapon: String,
     damage: Number,
     fireRate: Number,
-    extraDamage: Number,
-    icon: String
+    extraDamage: Number
 }, {collection: 'WeaponData'});
 
 // export the new Schema so we could modify it using Node.js

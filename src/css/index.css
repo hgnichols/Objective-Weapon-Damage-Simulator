@@ -10,18 +10,19 @@ body {
 
 .mainContentRow {
   height: 600px;
-  max-height: 600px
+  max-height: 600px;
 }
 
 .inlineBlock {
   display: inline-block;
 }
 
-.bottomColumn {
-  flex-grow: 1
-}
-
 .choice {
   /*max-width: 87px;*/
   font-size: 13px;
+}
+
+.choiceImage {
+  width: 60px;
+  height: 60px;
 }

@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import './App.css';
+import ReactTooltip from 'react-tooltip'
+import { MDBTooltip } from 'mdbreact';
+const WeaponSchema = require("./backend/WeaponSchema");
 
 class App extends Component {
   render() {
@@ -51,11 +54,29 @@ const Choice = (props) => {
 	return (
   	<div>
       {/*make this look good*/}
-      <button type="button" className="btn btn-outline-primary inlineBlock p-1 m-3 choice" onClick={() => props.weaponSetFunction(props.choice)}>
-        {props.choice.icon}
-        <br/>
-        {props.choice.name}
-      </button>    
+      <MDBTooltip
+        placement="bottom"
+        componentClass="btn btn-secondary inlineBlock p-0 m-2 choice"
+        tag="div"
+        component="button"
+        tooltipContent={props.choice.name}>
+        <img className="choiceImage" src={ props.getImageById(props.choice._id) } alt={"Choice " + props.choice.name} 
+        onClick={() => {
+          switch(props.choiceType) {
+            case "Weapons":
+            props.weaponSetFunction(props.choice);
+              break;
+            case "Talents":
+              props.talentSetFunction(props.choice);
+              break;
+            case "Runes":
+              // code block
+              break;
+            default:
+              //do nothing
+          }
+        }} />
+      </MDBTooltip>    
     </div>
   );
 };
@@ -90,26 +111,14 @@ class WeaponDamageCalculator extends React.Component {
     dataToLoadName: "Weapons",
     selectedWeapon: [],
     selectedRunes: [],
-    selectedTalents: []
+    selectedTalents: [],
   };
 
-  // when component mounts, first thing it does is fetch all existing data in our db
-  // then we incorporate a polling logic so that we can easily see if our db has 
-  // changed and implement those changes into our UI
   componentDidMount() {
     this.getWeaponDataFromDb();
     this.getTalentDataFromDb();
     this.getRuneDataFromDb();
   };
-
-  // never let a process live forever 
-  // always kill a process everytime we are done using it
-  // componentWillUnmount() {
-  //   if (this.state.intervalIsSet) {
-  //     clearInterval(this.state.intervalIsSet);
-  //     this.setState({ intervalIsSet: null });
-  //   }
-  // }
 
   getLeftAndRightButtonTitleForChoiceColumn = (titleOfButtonClicked) => {
     this.setState({ dataToLoadName: titleOfButtonClicked });
@@ -129,13 +138,7 @@ class WeaponDamageCalculator extends React.Component {
     
     return {left: this.state.orderedChoiceButtonTitles[prevIndex], right: this.state.orderedChoiceButtonTitles[nextIndex]}
   }
-  // just a note, here, in the front end, we use the id key of our data object 
-  // in order to identify which we want to Update or delete.
-  // for our back end, we use the object id assigned by MongoDB to modify 
-  // data base entries
 
-  // our first get method that uses our backend api to 
-  // fetch data from our data base
   getWeaponDataFromDb = () => {
     fetch("http://localhost:3001/api/getWeaponData")
       .then(data => data.json())
@@ -165,6 +168,10 @@ class WeaponDamageCalculator extends React.Component {
     this.setState({selectedWeapon: weapon});
   }
 
+  setSelectedTalent = (talent) => {
+    this.setState({selectedTalents: [talent]});
+  }
+
   getDataByName = (name) => {
     let dataToReturn;
     var names = this.state.orderedChoiceButtonTitles;
@@ -185,16 +192,54 @@ class WeaponDamageCalculator extends React.Component {
     return dataToReturn;
   };
 
-  calculateDPS = (weapon) => {
-    return (weapon.damage*weapon.fireRate) + weapon.extraDamage;
+  calculateDPS = (weapon, talents) => {
+    var handleModifier = (modifierName, damage, modifierValue) => {
+      var calculatedDamage;
+  
+      switch(modifierName) {
+        case "percent":
+          calculatedDamage = damage + (damage * modifierValue);
+          break;
+        case "headshotPercent":
+        calculatedDamage = damage;
+          break;
+        default:
+        calculatedDamage = damage;
+      }
+  
+      return calculatedDamage;
+    }
+
+    var damage = (weapon.damage*weapon.fireRate) + weapon.extraDamage;
+    talents.forEach(function(talent) {
+      damage = handleModifier(talent.modifierType, damage, talent.damageModifier);
+    });
+
+    return damage;
   };
+
+  getImageById = (id) => {
+    var path = '.\\images\\' + id + '.png';
+    return path;
+  };
+
+  createSelecteableListAsString = (selecteableList) => {
+    var text = [];
+    if(selecteableList === undefined) {return "";}
+    selecteableList.forEach(function(talent) {
+      text.push(talent.name);
+    });
+
+    return text.join();
+  }
 
   render() {
     const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents } = this.state;
-    const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon)} unit={""}/>]; 
+    const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents)} unit={""}/>]; 
 
     return (
       <div className="container">
+      <ReactTooltip />
         <br/>
         <h3 className="mx-auto" style={{width: 478 + 'px'}}>Objective Weapon Damage Simulator</h3>
         <br/>
@@ -212,13 +257,15 @@ class WeaponDamageCalculator extends React.Component {
             Slider 3
           </div>
         </div>
-        <div className="row mainContentRow">
-          <ChoiceContainerColumn title={choiceColumnInfo.title} options={this.getDataByName(dataToLoadName).map(dat => (
-            <Choice choice={dat} weaponSetFunction={this.setSelectedWeapon} />
-          ))} buttonLeftTitle={choiceColumnInfo.leftButtonTitle} buttonRightTitle={choiceColumnInfo.rightButtonTitle} choiceButtonClicked={this.choiceButtonClicked}/>           
-          <div className="col border border-secondary">
-            <InfoHeader weapon={"Slug Rifle"} talents={"headshot damage"} runes={"head shot damage"}/>
-            {calculatedInfoInitialState}
+        <div className="container">
+          <div className="row mainContentRow">
+            <ChoiceContainerColumn title={choiceColumnInfo.title} options={this.getDataByName(dataToLoadName).map(dat => (
+              <Choice choice={dat} choiceType={choiceColumnInfo.title} weaponSetFunction={this.setSelectedWeapon} talentSetFunction={this.setSelectedTalent} getImageById={this.getImageById} />
+            ))} buttonLeftTitle={choiceColumnInfo.leftButtonTitle} buttonRightTitle={choiceColumnInfo.rightButtonTitle} choiceButtonClicked={this.choiceButtonClicked}/>           
+            <div className="col border border-secondary">
+              <InfoHeader weapon={selectedWeapon.name} talents={this.createSelecteableListAsString(selectedTalents)} runes={""}/>
+              {calculatedInfoInitialState}
+            </div>
           </div>
         </div>
       </div>
