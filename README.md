@@ -4,10 +4,7 @@ In the project directory, you can run:
 
 Runs the app in the development mode.<br>
 Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
-
-### `node server.js`
-
-Navigate objective-weapon-simulator\src\backend to run this command to start the node server for routing
+Also starts node server.js
 
 ### Working Planning Document Link
 
