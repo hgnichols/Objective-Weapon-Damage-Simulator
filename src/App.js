@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import './App.css';
-import ReactTooltip from 'react-tooltip'
 import { MDBTooltip } from 'mdbreact';
-const WeaponSchema = require("./backend/WeaponSchema");
+import 'react-rangeslider/lib/index.css'
+import Slider from 'react-rangeslider'
 
 class App extends Component {
   render() {
@@ -53,13 +52,12 @@ const ChoiceContainerButtonRow = (props) => {
 const Choice = (props) => { 
 	return (
   	<div>
-      {/*make this look good*/}
       <MDBTooltip
         placement="bottom"
         componentClass="btn btn-secondary inlineBlock p-0 m-2 choice"
         tag="div"
         component="button"
-        tooltipContent={props.choice.name}>
+        tooltipContent={props.choice.rarity !== undefined ? (props.choice.rarity + " " + props.choice.name) : props.choice.name}>
         <img className="choiceImage" src={ props.getImageById(props.choice._id) } alt={"Choice " + props.choice.name} 
         onClick={() => {
           switch(props.choiceType) {
@@ -70,7 +68,7 @@ const Choice = (props) => {
               props.talentSetFunction(props.choice);
               break;
             case "Runes":
-              // code block
+              props.runeSetFunction(props.choice);
               break;
             default:
               //do nothing
@@ -85,7 +83,7 @@ const CalculatedInfo = (props) => {
 	return (
   	<div className="inlineBlock p-1 m-3 border border-secondary">
       {props.text}:{' '}
-      {props.value}{' '}
+      {!isNaN(props.value) && props.value != null && props.value !== undefined && props.value !== "" && "value" in props ? props.value : ""}{' '}
       {props.unit}
     </div>
   );
@@ -94,7 +92,7 @@ const CalculatedInfo = (props) => {
 const InfoHeader = (props) => {
   return(
     <div className="mt-1">
-      Ordered List of Choices: {props.weapon}{', '} {props.talents}{', '}{props.runes}
+      Ordered List of Choices: {props.weapon.rarity + " "} {props.weapon.name}{', '} {props.talents}{', '}{props.runes}
     </div>
   )
 }
@@ -112,6 +110,7 @@ class WeaponDamageCalculator extends React.Component {
     selectedWeapon: [],
     selectedRunes: [],
     selectedTalents: [],
+    headShotPercentSliderValue: 0,
   };
 
   componentDidMount() {
@@ -168,8 +167,12 @@ class WeaponDamageCalculator extends React.Component {
     this.setState({selectedWeapon: weapon});
   }
 
-  setSelectedTalent = (talent) => {
+  setSelectedTalents = (talent) => {
     this.setState({selectedTalents: [talent]});
+  }
+
+  setSelectedRunes = (rune) => {
+    this.setState({selectedRunes: [rune]});
   }
 
   getDataByName = (name) => {
@@ -192,7 +195,12 @@ class WeaponDamageCalculator extends React.Component {
     return dataToReturn;
   };
 
-  calculateDPS = (weapon, talents) => {
+  calculateDPS = (weapon, talents, runes, headShotChance) => {
+    return this.calculateDPM(weapon, talents, runes, headShotChance)/60;
+  };
+
+  calculateDPM = (weapon, talents, runes, headShotChance) => {
+    //((Dm * RPM ) + ((RPM * CC) * (Dmg * CD))/60
     var handleModifier = (modifierName, damage, modifierValue) => {
       var calculatedDamage;
   
@@ -201,18 +209,33 @@ class WeaponDamageCalculator extends React.Component {
           calculatedDamage = damage + (damage * modifierValue);
           break;
         case "headshotPercent":
-        calculatedDamage = damage;
+        if(weapon.canHeadshot) {
+          calculatedDamage = damage + Math.abs(((weapon.fireRate * 60) + (((weapon.fireRate * 60) * (headShotChance/100)) * (weapon.damage * (0.5 + modifierValue)))) - ((weapon.fireRate * 60) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5))));
+        } else {
+          calculatedDamage = damage;
+        }
           break;
         default:
         calculatedDamage = damage;
       }
   
       return calculatedDamage;
-    }
+    };
 
-    var damage = (weapon.damage*weapon.fireRate) + weapon.extraDamage;
+    var damage;
+    if(weapon.canHeadshot) {
+      damage = (weapon.damage * (weapon.fireRate * 60)) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5)) + weapon.extraDamage;
+    } else {
+      damage = (weapon.damage * (weapon.fireRate * 60));
+    }
+     
+
     talents.forEach(function(talent) {
       damage = handleModifier(talent.modifierType, damage, talent.damageModifier);
+    });
+
+    runes.forEach(function(rune) {
+      damage = handleModifier(rune.modifierType, damage, rune.damageModifier);
     });
 
     return damage;
@@ -233,20 +256,38 @@ class WeaponDamageCalculator extends React.Component {
     return text.join();
   }
 
+  handleHeadShotPercentSliderOnChange = (value) => {
+    this.setState({
+      headShotPercentSliderValue: value
+    })
+  }
+
   render() {
-    const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents } = this.state;
-    const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents)} unit={""}/>]; 
+    const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents, headShotPercentSliderValue } = this.state;
+    const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
+                                        <CalculatedInfo text={"Damage Per Minute"} value={this.calculateDPM(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
+                                        <CalculatedInfo text={"Damage Per Shot"} value={selectedWeapon.damage} unit={""}/>,
+                                        <CalculatedInfo text={"Fire Rate"} value={selectedWeapon.fireRate} unit={""}/>]; 
 
     return (
       <div className="container">
-      <ReactTooltip />
         <br/>
         <h3 className="mx-auto" style={{width: 478 + 'px'}}>Objective Weapon Damage Simulator</h3>
         <br/>
         <div className="row border border-secondary">
-          <div className="col" align="center">
-            {/*slider 1*/}
-            Slider 1
+          <div className="col slider">
+          <div align="center">
+            Head Shot Chance
+          </div>
+          <Slider
+            value={headShotPercentSliderValue}
+            min={0}
+            max={100}
+            step={1}
+            orientation="horizontal"
+            onChange={this.handleHeadShotPercentSliderOnChange}
+          />
+          <div className='value' align="center">{headShotPercentSliderValue}</div>
           </div>
           <div className="col border border-secondary" align="center">
             {/*slider 2*/}
@@ -257,13 +298,13 @@ class WeaponDamageCalculator extends React.Component {
             Slider 3
           </div>
         </div>
-        <div className="container">
+        <div className="container p-0">
           <div className="row mainContentRow">
             <ChoiceContainerColumn title={choiceColumnInfo.title} options={this.getDataByName(dataToLoadName).map(dat => (
-              <Choice choice={dat} choiceType={choiceColumnInfo.title} weaponSetFunction={this.setSelectedWeapon} talentSetFunction={this.setSelectedTalent} getImageById={this.getImageById} />
+              <Choice choice={dat} choiceType={choiceColumnInfo.title} weaponSetFunction={this.setSelectedWeapon} talentSetFunction={this.setSelectedTalents} runeSetFunction={this.setSelectedRunes} getImageById={this.getImageById} />
             ))} buttonLeftTitle={choiceColumnInfo.leftButtonTitle} buttonRightTitle={choiceColumnInfo.rightButtonTitle} choiceButtonClicked={this.choiceButtonClicked}/>           
             <div className="col border border-secondary">
-              <InfoHeader weapon={selectedWeapon.name} talents={this.createSelecteableListAsString(selectedTalents)} runes={""}/>
+              <InfoHeader weapon={selectedWeapon} talents={this.createSelecteableListAsString(selectedTalents)} runes={this.createSelecteableListAsString(selectedRunes)}/>
               {calculatedInfoInitialState}
             </div>
           </div>

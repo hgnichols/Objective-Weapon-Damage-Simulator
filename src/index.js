@@ -4,7 +4,6 @@ import './css/index.css';
 import './css/bootstrap.min.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import './css/bootstrap-grid.min.css'
 
 ReactDOM.render(<App />, document.getElementById('root'));
 
