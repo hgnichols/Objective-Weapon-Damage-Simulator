@@ -55,24 +55,11 @@ const Choice = (props) => {
       <MDBTooltip
         placement="bottom"
         componentClass="btn btn-secondary inlineBlock p-0 m-2 choice"
-        tag="div"
         component="button"
         tooltipContent={props.choice.rarity !== undefined ? (props.choice.rarity + " " + props.choice.name) : props.choice.name}>
         <img className="choiceImage" src={ props.getImageById(props.choice._id) } alt={"Choice " + props.choice.name} 
         onClick={() => {
-          switch(props.choiceType) {
-            case "Weapons":
-            props.weaponSetFunction(props.choice);
-              break;
-            case "Talents":
-              props.talentSetFunction(props.choice);
-              break;
-            case "Runes":
-              props.runeSetFunction(props.choice);
-              break;
-            default:
-              //do nothing
-          }
+          props.setFunction(props.choiceType, props.choice);
         }} />
       </MDBTooltip>    
     </div>
@@ -165,15 +152,52 @@ class WeaponDamageCalculator extends React.Component {
 
   setSelectedWeapon = (weapon) => {
     this.setState({selectedWeapon: weapon});
+  };
+
+  setSelectedTalents = (talents) => {
+    this.setState({selectedTalents: talents});
+  };
+
+  setSelectedRunes = (runes) => {
+    this.setState({selectedRunes: runes});
+  };
+
+  copyOfArrayAfterRemove = (toRemove, array) => {
+    var copy = array;
+    var index = copy.indexOf(toRemove);
+    if(index > -1) {
+      copy.splice(index, 1);
+    }
+    return copy;
   }
 
-  setSelectedTalents = (talent) => {
-    this.setState({selectedTalents: [talent]});
-  }
-
-  setSelectedRunes = (rune) => {
-    this.setState({selectedRunes: [rune]});
-  }
+  setSelectedChoice = (choiceType, choice) => {
+    switch(choiceType) {
+      case "Weapons":
+      if(this.state.selectedWeapon !== undefined && this.state.selectedWeapon === choice) {
+        this.setSelectedWeapon([]);
+      } else {
+        this.setSelectedWeapon(choice);
+      }
+        break;
+      case "Talents":
+      if(this.state.selectedTalents !== undefined && this.state.selectedTalents.includes(choice)) {
+        this.setSelectedTalents(this.copyOfArrayAfterRemove(choice, this.state.selectedTalents));
+      } else {
+        this.setSelectedTalents(this.state.selectedTalents.concat(choice));
+      }
+        break;
+      case "Runes":
+      if(this.state.selectedRunes !== undefined && this.state.selectedRunes.includes(choice)) {
+        this.setSelectedRunes(this.copyOfArrayAfterRemove(choice, this.state.selectedRunes));
+      } else {
+        this.setSelectedRunes(this.state.selectedRunes.concat(choice));
+      }
+        break;
+      default:
+        //do nothing
+    }
+  };
 
   getDataByName = (name) => {
     let dataToReturn;
@@ -230,12 +254,12 @@ class WeaponDamageCalculator extends React.Component {
     }
      
 
-    talents.forEach(function(talent) {
-      damage = handleModifier(talent.modifierType, damage, talent.damageModifier);
+    talents.forEach(function(t) {
+      damage = handleModifier(t.modifierType, damage, t.damageModifier);
     });
 
-    runes.forEach(function(rune) {
-      damage = handleModifier(rune.modifierType, damage, rune.damageModifier);
+    runes.forEach(function(r) {
+      damage = handleModifier(r.modifierType, damage, r.damageModifier);
     });
 
     return damage;
@@ -301,7 +325,7 @@ class WeaponDamageCalculator extends React.Component {
         <div className="container p-0">
           <div className="row mainContentRow">
             <ChoiceContainerColumn title={choiceColumnInfo.title} options={this.getDataByName(dataToLoadName).map(dat => (
-              <Choice choice={dat} choiceType={choiceColumnInfo.title} weaponSetFunction={this.setSelectedWeapon} talentSetFunction={this.setSelectedTalents} runeSetFunction={this.setSelectedRunes} getImageById={this.getImageById} />
+              <Choice choice={dat} choiceType={choiceColumnInfo.title} setFunction={this.setSelectedChoice} getImageById={this.getImageById} />
             ))} buttonLeftTitle={choiceColumnInfo.leftButtonTitle} buttonRightTitle={choiceColumnInfo.rightButtonTitle} choiceButtonClicked={this.choiceButtonClicked}/>           
             <div className="col border border-secondary">
               <InfoHeader weapon={selectedWeapon} talents={this.createSelecteableListAsString(selectedTalents)} runes={this.createSelecteableListAsString(selectedRunes)}/>
