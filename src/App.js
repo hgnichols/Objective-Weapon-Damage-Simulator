@@ -223,8 +223,31 @@ class WeaponDamageCalculator extends React.Component {
     return this.calculateDPM(weapon, talents, runes, headShotChance)/60;
   };
 
+  //WHY THE FUCK DO I HAVE TO MAKE THIS IN HEAR AND OUTSIDE?Q!?!?!?!?
+  handleModifier = (modifierName, damage, modifierValue, weapon, headShotChance) => {
+    var calculatedDamage;
+
+    switch(modifierName) {
+      case "percent":
+        calculatedDamage = damage + (damage * modifierValue);
+        break;
+      case "headshotPercent":
+      if(weapon.canHeadshot) {
+        calculatedDamage = damage + Math.abs(((weapon.fireRate * 60) + (((weapon.fireRate * 60) * (headShotChance/100)) * (weapon.damage * (0.5 + modifierValue)))) - ((weapon.fireRate * 60) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5))));
+      } else {
+        calculatedDamage = damage;
+      }
+        break;
+      default:
+      calculatedDamage = damage;
+    }
+
+    return calculatedDamage;
+  };
+
   calculateDPM = (weapon, talents, runes, headShotChance) => {
     //((Dm * RPM ) + ((RPM * CC) * (Dmg * CD))/60
+    //WHY THE FUCK DO I HAVE TO MAKE THIS IN HEAR AND OUTSIDE?Q!?!?!?!?
     var handleModifier = (modifierName, damage, modifierValue) => {
       var calculatedDamage;
   
@@ -286,11 +309,37 @@ class WeaponDamageCalculator extends React.Component {
     })
   }
 
+  calculateHeadshotDamage = (selectedWeapon, selectedTalents, selectedRunes) => {
+    if(!selectedWeapon.canHeadshot) {
+      //probably actually need to make this say NA on the thing
+      return "NA";
+    }
+
+    var headshotDamageIncrease = 0.5;
+
+    selectedTalents.forEach(function(t) {
+      if(t.modifierType === "headshotPercent") {
+        headshotDamageIncrease += t.damageModifier;
+      }
+    });
+
+    selectedRunes.forEach(function(t) {
+      if(t.modifierType === "headshotPercent") {
+        headshotDamageIncrease += t.damageModifier;
+      }
+    });
+
+    var damage = selectedWeapon.damage + selectedWeapon.damage * headshotDamageIncrease;
+
+    return damage;
+  }
+
   render() {
     const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents, headShotPercentSliderValue } = this.state;
     const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
                                         <CalculatedInfo text={"Damage Per Minute"} value={this.calculateDPM(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
                                         <CalculatedInfo text={"Damage Per Shot"} value={selectedWeapon.damage} unit={""}/>,
+                                        <CalculatedInfo text={"Headshot Damage"} value={this.calculateHeadshotDamage(selectedWeapon, selectedTalents, selectedRunes)} unit={""}/>,
                                         <CalculatedInfo text={"Fire Rate"} value={selectedWeapon.fireRate} unit={""}/>]; 
 
     return (
