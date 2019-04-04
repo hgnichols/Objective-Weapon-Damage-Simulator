@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { MDBTooltip } from 'mdbreact';
 import 'react-rangeslider/lib/index.css'
 import Slider from 'react-rangeslider'
+import { Button } from 'react-bootstrap'
 
 class App extends Component {
   render() {
@@ -79,7 +80,11 @@ const CalculatedInfo = (props) => {
 const InfoHeader = (props) => {
   return(
     <div className="mt-1">
-      Ordered List of Choices: {props.weapon.rarity + " "} {props.weapon.name}{', '} {props.talents}{', '}{props.runes}
+      Weapon: {typeof props.weapon.name === "string" ? props.weapon.rarity: ""} {typeof props.weapon.name === "string" ? props.weapon.name: ""} <br/>
+      Talents: {props.talents} <br/>
+      Runes: {props.runes}
+      <br/>
+      <Button className="btn btn-dark" onClick={props.resetFunction}>Reset</Button>
     </div>
   )
 }
@@ -334,6 +339,10 @@ class WeaponDamageCalculator extends React.Component {
     return damage;
   }
 
+  resetChoices = () => {
+    this.setState({selectedWeapon: [], selectedRunes: [], selectedTalents: []});
+  }
+
   render() {
     const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents, headShotPercentSliderValue } = this.state;
     const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
@@ -377,7 +386,7 @@ class WeaponDamageCalculator extends React.Component {
               <Choice choice={dat} choiceType={choiceColumnInfo.title} setFunction={this.setSelectedChoice} getImageById={this.getImageById} />
             ))} buttonLeftTitle={choiceColumnInfo.leftButtonTitle} buttonRightTitle={choiceColumnInfo.rightButtonTitle} choiceButtonClicked={this.choiceButtonClicked}/>           
             <div className="col border border-secondary">
-              <InfoHeader weapon={selectedWeapon} talents={this.createSelecteableListAsString(selectedTalents)} runes={this.createSelecteableListAsString(selectedRunes)}/>
+              <InfoHeader weapon={selectedWeapon} talents={this.createSelecteableListAsString(selectedTalents)} runes={this.createSelecteableListAsString(selectedRunes)} resetFunction={this.resetChoices}/>
               {calculatedInfoInitialState}
             </div>
           </div>
