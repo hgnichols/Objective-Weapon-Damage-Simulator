@@ -228,21 +228,26 @@ class WeaponDamageCalculator extends React.Component {
     return this.calculateDPM(weapon, talents, runes, headShotChance)/60;
   };
 
+  //((Dm * RPM ) + ((RPM * CC) * (Dmg * CD))/60
   //WHY THE FUCK DO I HAVE TO MAKE THIS IN HEAR AND OUTSIDE?Q!?!?!?!?
-  handleModifier = (modifierName, damage, modifierValue, weapon, headShotChance) => {
+  handleModifier(modifierName, damage, modifierValue, weapon)  {
     var calculatedDamage;
-
+  
     switch(modifierName) {
       case "percent":
-        calculatedDamage = damage + (damage * modifierValue);
+        calculatedDamage = damage + (weapon.damage * modifierValue);
         break;
-      case "headshotPercent":
+      case "headshotPercentRune":
       if(weapon.canHeadshot) {
-        calculatedDamage = damage + Math.abs(((weapon.fireRate * 60) + (((weapon.fireRate * 60) * (headShotChance/100)) * (weapon.damage * (0.5 + modifierValue)))) - ((weapon.fireRate * 60) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5))));
+        calculatedDamage = damage;
+        //calculatedDamage = damage + Math.abs(((weapon.fireRate * 60) + (((weapon.fireRate * 60) * (headShotChance/100)) * (weapon.damage * (0.5 + modifierValue)))) - ((weapon.fireRate * 60) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5))));
       } else {
         calculatedDamage = damage;
       }
         break;
+      case "headshotPercentTalent":
+
+      break;
       default:
       calculatedDamage = damage;
     }
@@ -250,30 +255,8 @@ class WeaponDamageCalculator extends React.Component {
     return calculatedDamage;
   };
 
-  calculateDPM = (weapon, talents, runes, headShotChance) => {
-    //((Dm * RPM ) + ((RPM * CC) * (Dmg * CD))/60
-    //WHY THE FUCK DO I HAVE TO MAKE THIS IN HEAR AND OUTSIDE?Q!?!?!?!?
-    var handleModifier = (modifierName, damage, modifierValue) => {
-      var calculatedDamage;
-  
-      switch(modifierName) {
-        case "percent":
-          calculatedDamage = damage + (damage * modifierValue);
-          break;
-        case "headshotPercent":
-        if(weapon.canHeadshot) {
-          calculatedDamage = damage + Math.abs(((weapon.fireRate * 60) + (((weapon.fireRate * 60) * (headShotChance/100)) * (weapon.damage * (0.5 + modifierValue)))) - ((weapon.fireRate * 60) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5))));
-        } else {
-          calculatedDamage = damage;
-        }
-          break;
-        default:
-        calculatedDamage = damage;
-      }
-  
-      return calculatedDamage;
-    };
-
+  calculateDPM = (weapon, talents, runes, headShotChance, handleModifier) => {
+    
     var damage;
     if(weapon.canHeadshot) {
       damage = (weapon.damage * (weapon.fireRate * 60)) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5)) + weapon.extraDamage;
@@ -283,11 +266,11 @@ class WeaponDamageCalculator extends React.Component {
      
 
     talents.forEach(function(t) {
-      damage = handleModifier(t.modifierType, damage, t.damageModifier);
+      damage = handleModifier(t.modifierType, damage, t.damageModifier, weapon);
     });
 
     runes.forEach(function(r) {
-      damage = handleModifier(r.modifierType, damage, r.damageModifier);
+      damage = handleModifier(r.modifierType, damage, r.damageModifier, weapon);
     });
 
     return damage;
@@ -346,7 +329,7 @@ class WeaponDamageCalculator extends React.Component {
   render() {
     const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents, headShotPercentSliderValue } = this.state;
     const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
-                                        <CalculatedInfo text={"Damage Per Minute"} value={this.calculateDPM(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
+                                        <CalculatedInfo text={"Damage Per Minute"} value={this.calculateDPM(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue, this.handleModifier)} unit={""}/>,
                                         <CalculatedInfo text={"Damage Per Shot"} value={selectedWeapon.damage} unit={""}/>,
                                         <CalculatedInfo text={"Headshot Damage"} value={this.calculateHeadshotDamage(selectedWeapon, selectedTalents, selectedRunes)} unit={""}/>,
                                         <CalculatedInfo text={"Fire Rate"} value={selectedWeapon.fireRate} unit={""}/>]; 
