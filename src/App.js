@@ -72,7 +72,7 @@ const CalculatedInfo = (props) => {
   	<div className="inlineBlock p-1 m-3 border border-secondary">
       {props.text}:{' '}
       {!isNaN(props.value) && props.value != null && props.value !== undefined && props.value !== "" && "value" in props ? props.value : ""}{' '}
-      {props.unit}
+      {!isNaN(props.value) && props.value != null && props.value !== undefined && props.value !== "" && "value" in props ? props.unit : ""}
     </div>
   );
 };
@@ -90,7 +90,7 @@ const InfoHeader = (props) => {
 }
 
 class WeaponDamageCalculator extends React.Component {
-
+  
   state = {
     weaponData: [],
     runeData: [],
@@ -103,6 +103,7 @@ class WeaponDamageCalculator extends React.Component {
     selectedRunes: [],
     selectedTalents: [],
     headShotPercentSliderValue: 0,
+    totalEnemyHealth: 1500,
   };
 
   componentDidMount() {
@@ -229,8 +230,7 @@ class WeaponDamageCalculator extends React.Component {
   };
 
   //((Dm * RPM ) + ((RPM * CC) * (Dmg * CD))/60
-  //WHY THE FUCK DO I HAVE TO MAKE THIS IN HEAR AND OUTSIDE?Q!?!?!?!?
-  handleModifier(modifierName, damage, modifierValue, weapon)  {
+  handleModifier = (modifierName, damage, modifierValue, headShotChance, weapon) => {
     var calculatedDamage;
   
     switch(modifierName) {
@@ -239,39 +239,46 @@ class WeaponDamageCalculator extends React.Component {
         break;
       case "headshotPercentRune":
       if(weapon.canHeadshot) {
-        calculatedDamage = damage;
-        //calculatedDamage = damage + Math.abs(((weapon.fireRate * 60) + (((weapon.fireRate * 60) * (headShotChance/100)) * (weapon.damage * (0.5 + modifierValue)))) - ((weapon.fireRate * 60) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5))));
+        //calculatedDamage = damage;
+        calculatedDamage = damage + weapon.damage * (modifierValue * 0.5);
       } else {
         calculatedDamage = damage;
-      }
+      };
         break;
       case "headshotPercentTalent":
-
-      break;
+        if(weapon.canHeadshot) {
+          //calculatedDamage = damage;
+          calculatedDamage = damage + (weapon.damage * modifierValue);
+        } else {
+          calculatedDamage = damage;
+        };        
+        break;
       default:
       calculatedDamage = damage;
-    }
+    };
 
     return calculatedDamage;
   };
 
-  calculateDPM = (weapon, talents, runes, headShotChance, handleModifier) => {
-    
-    var damage;
-    if(weapon.canHeadshot) {
-      damage = (weapon.damage * (weapon.fireRate * 60)) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5)) + weapon.extraDamage;
-    } else {
-      damage = (weapon.damage * (weapon.fireRate * 60));
-    }
-     
+  calculateDPM = (weapon, talents, runes, headShotChance) => {
+  
+    var damage = weapon.damage;   
+
+    let modifierHandler = this.handleModifier;
 
     talents.forEach(function(t) {
-      damage = handleModifier(t.modifierType, damage, t.damageModifier, weapon);
+      damage = modifierHandler(t.modifierType, damage, t.damageModifier, headShotChance, weapon);
     });
 
     runes.forEach(function(r) {
-      damage = handleModifier(r.modifierType, damage, r.damageModifier, weapon);
+      damage = modifierHandler(r.modifierType, damage, r.damageModifier, headShotChance, weapon);
     });
+
+    if(weapon.canHeadshot) {
+      damage = (damage * (weapon.fireRate * 60)) + (((weapon.fireRate * 60) * headShotChance/100) * (weapon.damage * 0.5)) + weapon.extraDamage;
+    } else {
+      damage = (damage * (weapon.fireRate * 60));
+    };
 
     return damage;
   };
@@ -297,42 +304,79 @@ class WeaponDamageCalculator extends React.Component {
     })
   }
 
-  calculateHeadshotDamage = (selectedWeapon, selectedTalents, selectedRunes) => {
+  handleTotalEnemyHealthSliderOnChange = (value) => {
+    this.setState({
+      totalEnemyHealth: value
+    })
+  }
+
+  calculateHeadshotDamage = (selectedWeapon, selectedTalents, selectedRunes, headShotChance) => {
+    var damage = selectedWeapon.damage + selectedWeapon.damage * 0.5;
+
     if(!selectedWeapon.canHeadshot) {
       //probably actually need to make this say NA on the thing
+      //dosent because we parse NAN in the react element
       return "NA";
-    }
+    };
 
-    var headshotDamageIncrease = 0.5;
+    let modifierHandler = this.handleModifier;
 
     selectedTalents.forEach(function(t) {
-      if(t.modifierType === "headshotPercent") {
-        headshotDamageIncrease += t.damageModifier;
-      }
+      damage = modifierHandler(t.modifierType, damage, t.damageModifier, headShotChance, selectedWeapon);
     });
 
-    selectedRunes.forEach(function(t) {
-      if(t.modifierType === "headshotPercent") {
-        headshotDamageIncrease += t.damageModifier;
-      }
+    selectedRunes.forEach(function(r) {
+      damage = modifierHandler(r.modifierType, damage, r.damageModifier, headShotChance, selectedWeapon);
     });
-
-    var damage = selectedWeapon.damage + selectedWeapon.damage * headshotDamageIncrease;
 
     return damage;
-  }
+  };
+
+  calculateBaseDamageAfterModifiers = (selectedWeapon, selectedTalents, selectedRunes, headShotChance) => {
+    var damage = selectedWeapon.damage;
+
+    if(!selectedWeapon.canHeadshot) {
+      //probably actually need to make this say NA on the thing
+      //dosent because we parse NAN in the react element
+      return "NA";
+    };
+
+    let modifierHandler = this.handleModifier;
+
+    selectedTalents.forEach(function(t) {
+      if(!t.modifierType.includes("headshot")) {
+        damage = modifierHandler(t.modifierType, damage, t.damageModifier, headShotChance, selectedWeapon);
+      }
+    });
+
+    selectedRunes.forEach(function(r) {
+      if(!r.modifierType.includes("headshot")) {
+        damage = modifierHandler(r.modifierType, damage, r.damageModifier, headShotChance, selectedWeapon);
+      }
+    });
+
+    return damage;
+  };
 
   resetChoices = () => {
     this.setState({selectedWeapon: [], selectedRunes: [], selectedTalents: []});
   }
 
+  calculateTTK = (dps, enemyTotalHealth, fireRate) => {
+    var rawTTK = enemyTotalHealth/dps;
+    var TTKTimesFR = rawTTK * fireRate; 
+    return Math.ceil(TTKTimesFR)/fireRate;
+  }
+
   render() {
-    const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents, headShotPercentSliderValue } = this.state;
+    const { choiceColumnInfo, dataToLoadName, selectedWeapon, selectedRunes, selectedTalents, headShotPercentSliderValue, totalEnemyHealth } = this.state;
     const calculatedInfoInitialState = [<CalculatedInfo text={"DPS"} value={this.calculateDPS(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
-                                        <CalculatedInfo text={"Damage Per Minute"} value={this.calculateDPM(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue, this.handleModifier)} unit={""}/>,
-                                        <CalculatedInfo text={"Damage Per Shot"} value={selectedWeapon.damage} unit={""}/>,
-                                        <CalculatedInfo text={"Headshot Damage"} value={this.calculateHeadshotDamage(selectedWeapon, selectedTalents, selectedRunes)} unit={""}/>,
-                                        <CalculatedInfo text={"Fire Rate"} value={selectedWeapon.fireRate} unit={""}/>]; 
+                                        <CalculatedInfo text={"Damage Per Minute"} value={this.calculateDPM(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
+                                        <CalculatedInfo text={"Base Weapon Damage"} value={selectedWeapon.damage} unit={""}/>,
+                                        <CalculatedInfo text={"Base Weapon Damage After Modifiers"} value={this.calculateBaseDamageAfterModifiers(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
+                                        <CalculatedInfo text={"Headshot Damage"} value={this.calculateHeadshotDamage(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue)} unit={""}/>,
+                                        <CalculatedInfo text={"Fire Rate"} value={selectedWeapon.fireRate} unit={""}/>,
+                                        <CalculatedInfo text={"Time To Kill"} value={this.calculateTTK(this.calculateDPS(selectedWeapon, selectedTalents, selectedRunes, headShotPercentSliderValue), totalEnemyHealth, selectedWeapon.fireRate)} unit={"Seconds"}/>]; 
 
     return (
       <div className="container">
@@ -340,7 +384,7 @@ class WeaponDamageCalculator extends React.Component {
         <h3 className="mx-auto" style={{width: 478 + 'px'}}>Objective Weapon Damage Simulator</h3>
         <br/>
         <div className="row border border-secondary">
-          <div className="col slider">
+          <div className="col slider border border-secondary">
           <div align="center">
             Head Shot Chance
           </div>
@@ -354,9 +398,19 @@ class WeaponDamageCalculator extends React.Component {
           />
           <div className='value' align="center">{headShotPercentSliderValue}</div>
           </div>
-          <div className="col border border-secondary" align="center">
-            {/*slider 2*/}
-            Slider 2
+          <div className="col slider border border-secondary">
+          <div align="center">
+            Total Enemy Health Including Armour
+          </div>
+          <Slider
+            value={totalEnemyHealth}
+            min={0}
+            max={3200}
+            step={1}
+            orientation="horizontal"
+            onChange={this.handleTotalEnemyHealthSliderOnChange}
+          />
+          <div className='value' align="center">{totalEnemyHealth}</div>
           </div>
           <div className="col border border-secondary" align="center">
             {/*slider 3*/}
