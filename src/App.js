@@ -145,16 +145,18 @@ class WeaponDamageCalculator extends React.Component {
     headShotPercentSliderValue: 0,
     totalEnemyHealth: 1500,
     classData: [],
-    selectedClass: []
+    selectedClass: [],
+    fuckthisgame: []
   };
 
   componentDidMount() {
-    
-    //loadData().fetch();
-    this.getWeaponDataFromDb();
-    this.getTalentDataFromDb();
-    this.getRuneDataFromDb();
-    this.getClassDataFromDb();
+    loadData().then(data => {
+      console.log(data);
+      this.loadRuneDataForClasses(data[3], data[1]);
+      this.setState({ weaponData: data[0] });
+      this.setState({ runeData: data[2] });
+      this.setState({ talentData: data[1] });
+    });
   }
 
   loadRuneDataForClasses = (classes, talents) => {
@@ -170,7 +172,7 @@ class WeaponDamageCalculator extends React.Component {
       }
     }
 
-    this.setState({ classes: copyOfClasses });
+    this.setState({ classData: copyOfClasses });
   };
 
   getLeftAndRightButtonTitleForChoiceColumn = titleOfButtonClicked => {

@@ -25,9 +25,9 @@ let loadData = async () => {
     getClassDataFromDb()
   ]).then(function(values) {
     loadRuneDataForClasses(values[3].data, values[1].data);
-    values.map(result => data.push(result.data));  
-    return data; 
+    values.forEach(value => data.push(value.data));
   });
+  return data;
 };
 
 let getWeaponDataFromDb = async () => {
