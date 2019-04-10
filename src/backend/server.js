@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -6,19 +5,18 @@ const logger = require("morgan");
 const WeaponSchema = require("./WeaponSchema");
 const TalentSchema = require("./TalentSchema");
 const RuneSchema = require("./RuneSchema");
+const ClassSchema = require("./ClassSchema");
 const API_PORT = 3001;
 const app = express();
 const router = express.Router();
-const cors = require('cors');
+const cors = require("cors");
 
 // this is our MongoDB database
-const dbRoute = "mongodb+srv://hgnichols:2698jk80@cluster0-llmzd.mongodb.net/RealmRoyaleWeaponData?retryWrites=true";
+const dbRoute =
+  "mongodb+srv://hgnichols:2698jk80@cluster0-llmzd.mongodb.net/RealmRoyaleWeaponData?retryWrites=true";
 
 // connects our back end code with the database
-mongoose.connect(
-  dbRoute,
-  { useNewUrlParser: true }
-);
+mongoose.connect(dbRoute, { useNewUrlParser: true });
 
 let db = mongoose.connection;
 
@@ -56,6 +54,15 @@ router.get("/getTalentData", (req, res) => {
 
 router.get("/getRuneData", (req, res) => {
   RuneSchema.find((err, data) => {
+    if (err) return res.json({ success: false, error: err });
+    let stuff = res.json({ success: true, data: data });
+    console.log(data);
+    return stuff;
+  });
+});
+
+router.get("/getClassData", (req, res) => {
+  ClassSchema.find((err, data) => {
     if (err) return res.json({ success: false, error: err });
     let stuff = res.json({ success: true, data: data });
     console.log(data);
