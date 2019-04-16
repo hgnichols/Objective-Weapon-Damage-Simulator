@@ -129,8 +129,9 @@ const ClassSelecter = props => {
   return (
     <div>
       {props.classes.map(dat => (
-                <Button className={"p-1 m-1 btn " + props.setClassButtonColor(dat.name)}>{dat.name}</Button>
+                <Button onClick={()=> {props.setFunction(dat)}} className={"p-1 m-1 btn " + props.setClassButtonColor(dat.name)}>{dat.name}</Button>
               ))}
+      <p className="m-1">{props.selectedRealmClass !== undefined ? props.selectedRealmClass.name : ""}</p>
     </div>
   );
 };
@@ -262,7 +263,14 @@ class WeaponDamageCalculator extends React.Component {
   };
 
   setSelectedClass = classes => {
-    this.setState({ selectedClass: classes });
+    if (
+      this.state.selectedClass !== undefined &&
+      this.state.selectedClass === classes
+    ) {
+      this.setState({selectedClass: []});
+    } else {
+      this.setState({ selectedClass: classes });
+    };
   };
 
   copyOfArrayAfterRemove = (toRemove, array) => {
@@ -333,7 +341,11 @@ class WeaponDamageCalculator extends React.Component {
         dataToReturn = this.state.weaponData;
         break;
       case names[1]:
+      if(this.state.selectedClass.availableRunes !== undefined) {
+        dataToReturn = this.state.talentData.filter( ( el ) => this.state.selectedClass.availableRunes.includes( el ) );
+      } else {
         dataToReturn = this.state.talentData;
+      };
         break;
       case names[2]:
         dataToReturn = this.state.runeData;
@@ -694,7 +706,7 @@ class WeaponDamageCalculator extends React.Component {
           </div>
           <div className="col border border-secondary" align="center">
             Class <br/>
-              <ClassSelecter classes={classData} setFunction={this.setSelectedClass} setClassButtonColor={this.setClassButtonColor}/>
+              <ClassSelecter classes={classData} setFunction={this.setSelectedClass} setClassButtonColor={this.setClassButtonColor} selectedRealmClass={selectedClass}/>
           </div>
         </div>
         <div className="container p-0">
