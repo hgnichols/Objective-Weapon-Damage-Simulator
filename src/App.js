@@ -110,7 +110,7 @@ const CalculatedInfo = props => {
 const InfoHeader = props => {
   return (
     <div className="mt-1">
-      <p className="text-center">Class: {props.class.name}</p>
+      <p>Abilities: {props.abilities}</p>
       Weapon: {typeof props.weapon.name === "string"
         ? props.weapon.rarity
         : ""}{" "}
@@ -125,17 +125,27 @@ const InfoHeader = props => {
   );
 };
 
+const ClassSelecter = props => {
+  return (
+    <div>
+      {props.classes.map(dat => (
+                <Button className={"p-1 m-1 btn " + props.setClassButtonColor(dat.name)}>{dat.name}</Button>
+              ))}
+    </div>
+  );
+};
+
 class WeaponDamageCalculator extends React.Component {
   state = {
     weaponData: [],
     runeData: [],
     talentData: [],
     /*The left and right buttons will be gotten from the database*/
-    orderedChoiceButtonTitles: ["Weapons", "Talents", "Runes", "Classes"],
+    orderedChoiceButtonTitles: ["Weapons", "Talents", "Runes", "Abilities"],
     choiceColumnInfo: {
       title: "Weapons",
       collection: "WeaponData",
-      leftButtonTitle: "Classes",
+      leftButtonTitle: "Abilities",
       rightButtonTitle: "Talents"
     },
     dataToLoadName: "Weapons",
@@ -146,8 +156,9 @@ class WeaponDamageCalculator extends React.Component {
     totalEnemyHealth: 1500,
     classData: [],
     selectedClass: [],
-    fuckthisgame: []
-  };
+    abilityData: [],
+    selectedAbilities: []
+    };
 
   componentDidMount() {
     loadData().then(data => {
@@ -328,7 +339,7 @@ class WeaponDamageCalculator extends React.Component {
         dataToReturn = this.state.runeData;
         break;
       case names[3]:
-        dataToReturn = this.state.classData;
+        dataToReturn = this.state.abilityData;
         break;
       default:
         dataToReturn = [];
@@ -542,6 +553,29 @@ class WeaponDamageCalculator extends React.Component {
     return Math.ceil(TTKTimesFR) / fireRate;
   };
 
+  setClassButtonColor = (className) => {
+    var color;
+
+    switch(className.toLowerCase()) {
+      case "mage":
+        color = "btn-info";
+        break;
+      case "assasin":
+        color = "btn-dark";
+        break;
+      case "hunter":
+        color = "btn-success";
+        break;
+      case "warrior":
+        color = "btn-danger";
+        break;
+      default:
+        color = "btn-link";
+    }
+
+    return color;
+  };
+
   render() {
     const {
       choiceColumnInfo,
@@ -549,9 +583,11 @@ class WeaponDamageCalculator extends React.Component {
       selectedWeapon,
       selectedRunes,
       selectedTalents,
+      selectedAbilities,
       headShotPercentSliderValue,
       totalEnemyHealth,
-      selectedClass
+      selectedClass,
+      classData,
     } = this.state;
     const calculatedInfoInitialState = [
       <CalculatedInfo
@@ -657,8 +693,8 @@ class WeaponDamageCalculator extends React.Component {
             </div>
           </div>
           <div className="col border border-secondary" align="center">
-            {/*slider 3*/}
-            Slider 3
+            Class <br/>
+              <ClassSelecter classes={classData} setFunction={this.setSelectedClass} setClassButtonColor={this.setClassButtonColor}/>
           </div>
         </div>
         <div className="container p-0">
@@ -680,6 +716,7 @@ class WeaponDamageCalculator extends React.Component {
             <div className="col border border-secondary">
               <InfoHeader
                 weapon={selectedWeapon}
+                abilities={this.createSelecteableListAsString(selectedAbilities)}
                 class={selectedClass}
                 talents={this.createSelecteableListAsString(selectedTalents)}
                 runes={this.createSelecteableListAsString(selectedRunes)}

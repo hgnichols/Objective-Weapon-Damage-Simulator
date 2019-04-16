@@ -13,7 +13,7 @@ const cors = require("cors");
 
 // this is our MongoDB database
 const dbRoute =
-  "mongodb+srv://hgnichols:2698jk80@cluster0-llmzd.mongodb.net/RealmRoyaleWeaponData?retryWrites=true";
+  "mongodb+srv://public:FONzhZebD5zbavgs@cluster0-llmzd.mongodb.net/RealmRoyaleWeaponData?retryWrites=true";
 
 // connects our back end code with the database
 mongoose.connect(dbRoute, { useNewUrlParser: true });
