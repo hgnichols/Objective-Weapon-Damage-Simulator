@@ -441,6 +441,11 @@ class WeaponDamageCalculator extends React.Component {
 
   getImageById = id => {
     var path = ".\\images\\" + id + ".png";
+    // var image = new Image();
+    // image.src = path;
+    // if(image.width === 0) {
+    //   path = ".\\images\\ImageNotFound.png";
+    // }; 
     return path;
   };
 
