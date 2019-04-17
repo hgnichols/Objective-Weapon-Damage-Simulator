@@ -5,6 +5,93 @@ import Slider from "react-rangeslider";
 import { Button } from "react-bootstrap";
 import { loadData } from "./DataHandler";
 
+function contentEditable(WrappedComponent) {
+  return class extends React.Component {
+    state = {
+      editing: false
+    };
+
+    toggleEdit = e => {
+      e.stopPropagation();
+      //if you wanted to highlight all it stopped editing leave commented out for now
+      //if (this.state.editing) {
+        //this.cancel();
+      //} else {
+        this.edit();
+      //}
+    };
+
+    edit = () => {
+      this.setState(
+        {
+          editing: true
+        },
+        () => {
+          this.domElm.focus();
+        }
+      );
+    };
+
+    save = () => {
+      this.setState(
+        {
+          editing: false
+        },
+        () => {
+          if(this.props.validation(this.domElm.textContent)) {
+            if (this.props.onSave && this.isValueChanged()) {
+              this.props.onSave(this.domElm.textContent);
+            };
+          }         
+        }
+      );
+    };
+
+    cancel = () => {
+      this.setState({
+        editing: false
+      });
+    };
+
+    isValueChanged = () => {
+      return this.props.value !== this.domElm.textContent;
+    };
+
+    handleKeyDown = e => {
+      const { key } = e;
+      switch (key) {
+        case "Enter":
+        case "Escape":
+          this.save();
+          break;
+      }
+    };
+
+    render() {
+      let editOnClick = true;
+      const { editing} = this.state;
+      if (this.props.editOnClick !== undefined) {
+        editOnClick = this.props.editOnClick;
+      }
+      return (
+        <WrappedComponent
+          className={editing ? "editing" : ""}
+          onClick={editOnClick ? this.toggleEdit : undefined}
+          contentEditable={editing}
+          ref={domNode => {
+            this.domElm = domNode;
+          }}
+          onBlur={this.save}
+          onKeyDown={this.handleKeyDown}
+          {...this.props}
+        >
+          {this.props.value}
+        </WrappedComponent>
+      );
+    }
+  };
+}
+
 class App extends Component {
   render() {
     return (
@@ -137,29 +224,33 @@ const ClassSelecter = props => {
 };
 
 class WeaponDamageCalculator extends React.Component {
-  state = {
-    weaponData: [],
-    runeData: [],
-    talentData: [],
-    /*The left and right buttons will be gotten from the database*/
-    orderedChoiceButtonTitles: ["Weapons", "Talents", "Runes", "Abilities"],
-    choiceColumnInfo: {
-      title: "Weapons",
-      collection: "WeaponData",
-      leftButtonTitle: "Abilities",
-      rightButtonTitle: "Talents"
-    },
-    dataToLoadName: "Weapons",
-    selectedWeapon: [],
-    selectedRunes: [],
-    selectedTalents: [],
-    headShotPercentSliderValue: 0,
-    totalEnemyHealth: 1500,
-    classData: [],
-    selectedClass: [],
-    abilityData: [],
-    selectedAbilities: []
-    };
+  constructor(props){
+    super(props);
+    this.state = {
+      weaponData: [],
+      runeData: [],
+      talentData: [],
+      /*The left and right buttons will be gotten from the database*/
+      orderedChoiceButtonTitles: ["Weapons", "Talents", "Runes", "Abilities"],
+      choiceColumnInfo: {
+        title: "Weapons",
+        collection: "WeaponData",
+        leftButtonTitle: "Abilities",
+        rightButtonTitle: "Talents"
+      },
+      dataToLoadName: "Weapons",
+      selectedWeapon: [],
+      selectedRunes: [],
+      selectedTalents: [],
+      headShotPercentSliderValue: 0,
+      totalEnemyHealth: 1500,
+      classData: [],
+      selectedClass: [],
+      abilityData: [],
+      selectedAbilities: [],
+      };
+    this.handleHeadShotPercentSliderOnChange = this.handleHeadShotPercentSliderOnChange.bind(this);
+  }
 
   componentDidMount() {
     loadData().then(data => {
@@ -593,7 +684,30 @@ class WeaponDamageCalculator extends React.Component {
     return color;
   };
 
+  validateEnteredHeadShotChance = (value) => {
+    var result = value.length != "" && !isNaN(value) && Number.isInteger(+value) && value >= 0 && value <= 100;
+    if(result) {
+      this.setState({editableDivColor1: "text-dark"});
+    } else {
+      this.setState({editableDivColor1: "text-danger"});
+
+    }
+    return result;
+  };
+
+  validateEnteredEnemyHealth = (value) => {
+    var result = value.length != "" && !isNaN(value) && Number.isInteger(+value) && value >= 0 && value <= 3200;
+    if(result) {
+      this.setState({editableDivColor1: "text-dark"});
+    } else {
+      this.setState({editableDivColor1: "text-danger"});
+
+    }
+    return result;
+  };
+
   render() {
+    let EditableDiv = contentEditable("div");
     const {
       choiceColumnInfo,
       dataToLoadName,
@@ -692,7 +806,7 @@ class WeaponDamageCalculator extends React.Component {
               onChange={this.handleHeadShotPercentSliderOnChange}
             />
             <div className="value" align="center">
-              {headShotPercentSliderValue}
+              <EditableDiv className={"editableDiv pl-2 pr-2" }  value={headShotPercentSliderValue} onSave={this.handleHeadShotPercentSliderOnChange} validation={this.validateEnteredHeadShotChance} />
             </div>
           </div>
           <div className="col slider border border-secondary">
@@ -706,7 +820,7 @@ class WeaponDamageCalculator extends React.Component {
               onChange={this.handleTotalEnemyHealthSliderOnChange}
             />
             <div className="value" align="center">
-              {totalEnemyHealth}
+              <EditableDiv className={"editableDiv pl-2 pr-2"}  value={totalEnemyHealth} onSave={this.handleTotalEnemyHealthSliderOnChange} validation={this.validateEnteredEnemyHealth} />
             </div>
           </div>
           <div className="col border border-secondary" align="center">
