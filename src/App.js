@@ -472,7 +472,7 @@ class WeaponDamageCalculator extends React.Component {
       case "headshotPercentRune":
         if (weapon.canHeadshot) {
           //calculatedDamage = damage;
-          calculatedDamage = damage + weapon.damage * (modifierValue * 0.5);
+          calculatedDamage = damage + ((weapon.damage * (modifierValue * 0.5)) * (headShotChance/100));
         } else {
           calculatedDamage = damage;
         }
@@ -480,7 +480,7 @@ class WeaponDamageCalculator extends React.Component {
       case "headshotPercentTalent":
         if (weapon.canHeadshot) {
           //calculatedDamage = damage;
-          calculatedDamage = damage + weapon.damage * modifierValue;
+          calculatedDamage = damage + ((weapon.damage * modifierValue) * (headShotChance/100));
         } else {
           calculatedDamage = damage;
         }
