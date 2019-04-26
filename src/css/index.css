@@ -29,4 +29,26 @@ body {
 
 .editableDiv {
   display: inline-block;
+  border-bottom: solid #3A3A3A;
+  border-width: thin;
+  border-radius: 3px;
+}
+
+.slider-horizontal .rangeslider-horizontal, .slider-horizontal .rangeslider__fill, .slider-horizontal .rangeslider__handle {
+  border-radius: 0;
+}
+
+.slider-horizontal .rangeslider__handle {
+  width: 10px !important;
+  height: 30px !important;
+  border-radius: 0 !important;
+
+}
+
+.rangeslider__handle {
+  padding: 0;
+}
+
+.rangeslider__handle::after {
+  content: none !important;
 }

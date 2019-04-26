@@ -13,7 +13,7 @@ function contentEditable(WrappedComponent) {
 
     toggleEdit = e => {
       e.stopPropagation();
-      //if you wanted to highlight all it stopped editing leave commented out for now
+      //if you wanted to highlight all by double clicking it stopped editing leave commented out for now
       //if (this.state.editing) {
         //this.cancel();
       //} else {
@@ -797,30 +797,34 @@ class WeaponDamageCalculator extends React.Component {
         <div className="row border border-secondary">
           <div className="col slider border border-secondary">
             <div align="center">Head Shot Chance</div>
-            <Slider
-              value={headShotPercentSliderValue}
-              min={0}
-              max={100}
-              step={1}
-              orientation="horizontal"
-              onChange={this.handleHeadShotPercentSliderOnChange}
-            />
+            <div className="slider-horizontal">
+              <Slider
+                value={headShotPercentSliderValue}
+                min={0}
+                max={100}
+                step={1}
+                orientation="horizontal"
+                onChange={this.handleHeadShotPercentSliderOnChange}
+              />
+            </div>
             <div className="value" align="center">
-              <EditableDiv className={"editableDiv pl-2 pr-2" }  value={headShotPercentSliderValue} onSave={this.handleHeadShotPercentSliderOnChange} validation={this.validateEnteredHeadShotChance} />
+              <EditableDiv className={"editableDiv pl-2 pr-2 mb-1 mt-0" }  value={headShotPercentSliderValue} onSave={this.handleHeadShotPercentSliderOnChange} validation={this.validateEnteredHeadShotChance} />
             </div>
           </div>
           <div className="col slider border border-secondary">
             <div align="center">Total Enemy Health Including Armour</div>
-            <Slider
-              value={totalEnemyHealth}
-              min={0}
-              max={3200}
-              step={1}
-              orientation="horizontal"
-              onChange={this.handleTotalEnemyHealthSliderOnChange}
-            />
+            <div className="slider-horizontal">
+              <Slider
+                value={totalEnemyHealth}
+                min={0}
+                max={3200}
+                step={1}
+                orientation="horizontal"
+                onChange={this.handleTotalEnemyHealthSliderOnChange}
+              />
+            </div>
             <div className="value" align="center">
-              <EditableDiv className={"editableDiv pl-2 pr-2"}  value={totalEnemyHealth} onSave={this.handleTotalEnemyHealthSliderOnChange} validation={this.validateEnteredEnemyHealth} />
+              <EditableDiv className={"editableDiv pl-2 pr-2 mb-1 mt-0"}  value={totalEnemyHealth} onSave={this.handleTotalEnemyHealthSliderOnChange} validation={this.validateEnteredEnemyHealth} />
             </div>
           </div>
           <div className="col border border-secondary" align="center">
