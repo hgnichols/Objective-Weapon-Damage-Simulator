@@ -530,6 +530,10 @@ class WeaponDamageCalculator extends React.Component {
     return damage;
   };
 
+  formatNumberByTwoDecimalPoints = number => {
+    return parseFloat(Math.round(number * 100) / 100);
+  }
+
   getImageById = id => {
     var path = ".\\images\\" + id + ".png";
     // var image = new Image();
@@ -723,22 +727,22 @@ class WeaponDamageCalculator extends React.Component {
     const calculatedInfoInitialState = [
       <CalculatedInfo
         text={"DPS"}
-        value={this.calculateDPS(
+        value={this.formatNumberByTwoDecimalPoints(this.calculateDPS(
           selectedWeapon,
           selectedTalents,
           selectedRunes,
           headShotPercentSliderValue
-        )}
+        ))}
         unit={""}
       />,
       <CalculatedInfo
         text={"Damage Per Minute"}
-        value={this.calculateDPM(
+        value={this.formatNumberByTwoDecimalPoints(this.calculateDPM(
           selectedWeapon,
           selectedTalents,
           selectedRunes,
           headShotPercentSliderValue
-        )}
+        ))}
         unit={""}
       />,
       <CalculatedInfo
@@ -773,7 +777,7 @@ class WeaponDamageCalculator extends React.Component {
       />,
       <CalculatedInfo
         text={"Time To Kill"}
-        value={this.calculateTTK(
+        value={this.formatNumberByTwoDecimalPoints(this.calculateTTK(
           this.calculateDPS(
             selectedWeapon,
             selectedTalents,
@@ -782,7 +786,7 @@ class WeaponDamageCalculator extends React.Component {
           ),
           totalEnemyHealth,
           selectedWeapon.fireRate
-        )}
+        ))}
         unit={"Seconds"}
       />
     ];
