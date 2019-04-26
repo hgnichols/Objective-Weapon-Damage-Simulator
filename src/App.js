@@ -104,11 +104,11 @@ class App extends Component {
 
 const ChoiceContainerColumn = props => {
   return (
-    <div className="col-3 border border-primary">
-      <div className="row justify-content-center">
+    <div className="col-3 border border-primary choiceContainerColumn">
+      <div className="row justify-content-center testRow">
         <div className="mt-1 mb-0">{props.title}</div>
       </div>
-      <div className="row justify-content-center">
+      <div className="row testRow">
         {/*Add organization shit for props array*/}
         {props.options}
       </div>
@@ -123,24 +123,26 @@ const ChoiceContainerColumn = props => {
 
 const ChoiceContainerButtonRow = props => {
   return (
-    <div className="row align-items-end">
-      <div className="col text-center">
-        <p className="m-0">{props.leftTitle}</p>
-        <button
-          className="m-1"
-          onClick={() => props.choiceButtonClicked(props.leftTitle)}
-        >
-          Lefty
-        </button>
-      </div>
-      <div className="col text-center">
-        <p className="m-0">{props.rightTitle}</p>
-        <button
-          className="m-1"
-          onClick={() => props.choiceButtonClicked(props.rightTitle)}
-        >
-          Right
-        </button>
+    <div>
+      <div className="row align-items-end choiceConainerButtonRow">
+        <div className="col text-center">
+          <p className="m-0">{props.leftTitle}</p>
+          <button
+            className="m-1"
+            onClick={() => props.choiceButtonClicked(props.leftTitle)}
+          >
+            Lefty
+          </button>
+        </div>
+        <div className="col text-center">
+          <p className="m-0">{props.rightTitle}</p>
+          <button
+            className="m-1"
+            onClick={() => props.choiceButtonClicked(props.rightTitle)}
+          >
+            <div>Right</div>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -148,7 +150,7 @@ const ChoiceContainerButtonRow = props => {
 
 const Choice = props => {
   return (
-    <div>
+    <div className="choice">
       <MDBTooltip
         placement="bottom"
         componentClass="btn btn-secondary inlineBlock p-0 m-2 choice"
@@ -792,7 +794,7 @@ class WeaponDamageCalculator extends React.Component {
     ];
 
     return (
-      <div className="container">
+      <div className="container containerForSimulator">
         <br />
         <h3 className="mx-auto" style={{ width: 478 + "px" }}>
           Objective Weapon Damage Simulator

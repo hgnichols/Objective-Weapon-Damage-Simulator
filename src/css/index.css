@@ -52,3 +52,19 @@ body {
 .rangeslider__handle::after {
   content: none !important;
 }
+
+.choiceContainerColumn {
+  overflow: auto;
+}
+
+.choiceConainerButtonRow {
+  /*position: absolute;
+  bottom: 0;
+  */
+}
+
+.choice {
+}
+
+.testRow {
+}
