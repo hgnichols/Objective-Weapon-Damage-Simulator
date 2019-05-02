@@ -216,7 +216,7 @@ const InfoHeader = props => {
 
 const ClassSelecter = props => {
   return (
-    <div>
+    <div className="m-0 p-0">
       {props.classes.map(dat => (
                 <Button onClick={()=> {props.setFunction(dat)}} className={"p-1 m-1 btn " + props.setClassButtonColor(dat.name)}>{dat.name}</Button>
               ))}
@@ -250,6 +250,7 @@ class WeaponDamageCalculator extends React.Component {
       selectedClass: [],
       abilityData: [],
       selectedAbilities: [],
+      chanceToHit: 100,
       };
     this.handleHeadShotPercentSliderOnChange = this.handleHeadShotPercentSliderOnChange.bind(this);
   }
@@ -494,7 +495,7 @@ class WeaponDamageCalculator extends React.Component {
     return calculatedDamage;
   };
 
-  calculateDPM = (weapon, talents, runes, headShotChance) => {
+  calculateDPM = (weapon, talents, runes, headShotChance, hitChance) => {
     var damage = weapon.damage;
 
     let modifierHandler = this.handleModifier;
@@ -521,6 +522,7 @@ class WeaponDamageCalculator extends React.Component {
 
     if (weapon.canHeadshot) {
       damage =
+        //((weapon.fireRate * 60) - ((weapon.fireRate * 60) * (hitChance/100)))
         damage * (weapon.fireRate * 60) +
         ((weapon.fireRate * 60 * headShotChance) / 100) *
           (weapon.damage * 0.5) +
@@ -570,11 +572,16 @@ class WeaponDamageCalculator extends React.Component {
     });
   };
 
+  handleChanceToHitSliderOnChange = value => {
+    this.setState({
+      chanceToHit: value
+    });
+  };
+
   calculateHeadshotDamage = (
     selectedWeapon,
     selectedTalents,
     selectedRunes,
-    headShotChance
   ) => {
     var damage = selectedWeapon.damage + selectedWeapon.damage * 0.5;
 
@@ -591,7 +598,7 @@ class WeaponDamageCalculator extends React.Component {
         t.modifierType,
         damage,
         t.damageModifier,
-        headShotChance,
+        100,
         selectedWeapon
       );
     });
@@ -601,7 +608,7 @@ class WeaponDamageCalculator extends React.Component {
         r.modifierType,
         damage,
         r.damageModifier,
-        headShotChance,
+        100,
         selectedWeapon
       );
     });
@@ -690,7 +697,7 @@ class WeaponDamageCalculator extends React.Component {
     return color;
   };
 
-  validateEnteredHeadShotChance = (value) => {
+  validateEnteredPercentChance = (value) => {
     var result = value.length != "" && !isNaN(value) && Number.isInteger(+value) && value >= 0 && value <= 100;
     if(result) {
       this.setState({editableDivColor1: "text-dark"});
@@ -725,6 +732,7 @@ class WeaponDamageCalculator extends React.Component {
       totalEnemyHealth,
       selectedClass,
       classData,
+      chanceToHit,
     } = this.state;
     const calculatedInfoInitialState = [
       <CalculatedInfo
@@ -743,7 +751,8 @@ class WeaponDamageCalculator extends React.Component {
           selectedWeapon,
           selectedTalents,
           selectedRunes,
-          headShotPercentSliderValue
+          headShotPercentSliderValue,
+          chanceToHit,
         ))}
         unit={""}
       />,
@@ -768,7 +777,6 @@ class WeaponDamageCalculator extends React.Component {
           selectedWeapon,
           selectedTalents,
           selectedRunes,
-          headShotPercentSliderValue
         )}
         unit={""}
       />,
@@ -814,11 +822,11 @@ class WeaponDamageCalculator extends React.Component {
               />
             </div>
             <div className="value" align="center">
-              <EditableDiv className={"editableDiv pl-2 pr-2 mb-1 mt-0" }  value={headShotPercentSliderValue} onSave={this.handleHeadShotPercentSliderOnChange} validation={this.validateEnteredHeadShotChance} />
+              <EditableDiv className={"editableDiv pl-2 pr-2 mb-1 mt-0" }  value={headShotPercentSliderValue} onSave={this.handleHeadShotPercentSliderOnChange} validation={this.validateEnteredPercentChance} />
             </div>
           </div>
           <div className="col slider border border-secondary">
-            <div align="center">Total Enemy Health Including Armour</div>
+            <div align="center">Enemy Health And Armour</div>
             <div className="slider-horizontal">
               <Slider
                 value={totalEnemyHealth}
@@ -833,9 +841,25 @@ class WeaponDamageCalculator extends React.Component {
               <EditableDiv className={"editableDiv pl-2 pr-2 mb-1 mt-0"}  value={totalEnemyHealth} onSave={this.handleTotalEnemyHealthSliderOnChange} validation={this.validateEnteredEnemyHealth} />
             </div>
           </div>
-          <div className="col border border-secondary" align="center">
-            Class <br/>
-              <ClassSelecter classes={classData} setFunction={this.setSelectedClass} setClassButtonColor={this.setClassButtonColor} selectedRealmClass={selectedClass}/>
+          <div className="col slider border border-secondary">
+            <div align="center">Chance to Hit</div>
+            <div className="slider-horizontal">
+              <Slider
+                value={chanceToHit}
+                min={0}
+                max={100}
+                step={1}
+                orientation="horizontal"
+                onChange={this.handleChanceToHitSliderOnChange}
+              />
+            </div>
+            <div className="value" align="center">
+              <EditableDiv className={"editableDiv pl-2 pr-2 mb-1 mt-0"}  value={chanceToHit} onSave={this.handleChanceToHitSliderOnChange} validation={this.validateEnteredPercentChance} />
+            </div>
+          </div>
+          <div className="col-md-3 m-0 p-0 border border-secondary" align="center">
+            Class
+            <ClassSelecter classes={classData} setFunction={this.setSelectedClass} setClassButtonColor={this.setClassButtonColor} selectedRealmClass={selectedClass}/>
           </div>
         </div>
         <div className="container p-0">
