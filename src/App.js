@@ -163,7 +163,8 @@ const Choice = props => {
       >
         <img
           className="choiceImage"
-          src={props.getImageById(props.choice._id)}
+          src={props.getImageById(props.choice._id) }
+          onError={(e)=>{e.target.onerror = null; e.target.src=".\\images\\ImageNotFound.png"}}
           alt={"Choice " + props.choice.name}
           onClick={() => {
             props.setFunction(props.choiceType, props.choice);
@@ -186,7 +187,7 @@ const CalculatedInfo = props => {
         ? props.value
         : ""}{" "}
       {!isNaN(props.value) &&
-      props.value != null &&
+      props.value !== null &&
       props.value !== undefined &&
       props.value !== "" &&
       "value" in props
@@ -454,8 +455,8 @@ class WeaponDamageCalculator extends React.Component {
     return dataToReturn;
   };
 
-  calculateDPS = (weapon, talents, runes, headShotChance) => {
-    return this.calculateDPM(weapon, talents, runes, headShotChance) / 60;
+  calculateDPS = (weapon, talents, runes, headShotChance, hitChance) => {
+    return this.calculateDPM(weapon, talents, runes, headShotChance, hitChance) / 60;
   };
 
   //((Dm * RPM ) + ((RPM * CC) * (Dmg * CD))/60
@@ -506,7 +507,7 @@ class WeaponDamageCalculator extends React.Component {
         damage,
         t.damageModifier,
         headShotChance,
-        weapon
+        weapon,
       );
     });
 
@@ -516,14 +517,14 @@ class WeaponDamageCalculator extends React.Component {
         damage,
         r.damageModifier,
         headShotChance,
-        weapon
+        weapon,
       );
     });
 
     if (weapon.canHeadshot) {
       damage =
         //((weapon.fireRate * 60) - ((weapon.fireRate * 60) * (hitChance/100)))
-        damage * (weapon.fireRate * 60) +
+        damage * Math.floor(((weapon.fireRate) * 60) * hitChance/100) +
         ((weapon.fireRate * 60 * headShotChance) / 100) *
           (weapon.damage * 0.5) +
         weapon.extraDamage;
@@ -534,17 +535,12 @@ class WeaponDamageCalculator extends React.Component {
     return damage;
   };
 
-  formatNumberByTwoDecimalPoints = number => {
+  formatNumberByTwoDecimalPoints = (number) => {
     return parseFloat(Math.round(number * 100) / 100);
-  }
+  };
 
   getImageById = id => {
     var path = ".\\images\\" + id + ".png";
-    // var image = new Image();
-    // image.src = path;
-    // if(image.width === 0) {
-    //   path = ".\\images\\ImageNotFound.png";
-    // }; 
     return path;
   };
 
@@ -669,6 +665,9 @@ class WeaponDamageCalculator extends React.Component {
   };
 
   calculateTTK = (dps, enemyTotalHealth, fireRate) => {
+    //numbers of = number of shots required to kill
+    // Number of shots taken = 
+    //(numberOfHeadShots * headShotDamage) + (numberOfBodyShots * bodyShotDamage)
     var rawTTK = enemyTotalHealth / dps;
     var TTKTimesFR = rawTTK * fireRate;
     return Math.ceil(TTKTimesFR) / fireRate;
@@ -719,6 +718,10 @@ class WeaponDamageCalculator extends React.Component {
     return result;
   };
 
+  loadAllLocalImages = () => {
+    
+  }
+
   render() {
     let EditableDiv = contentEditable("div");
     const {
@@ -741,7 +744,8 @@ class WeaponDamageCalculator extends React.Component {
           selectedWeapon,
           selectedTalents,
           selectedRunes,
-          headShotPercentSliderValue
+          headShotPercentSliderValue,
+          chanceToHit,
         ))}
         unit={""}
       />,
@@ -792,7 +796,8 @@ class WeaponDamageCalculator extends React.Component {
             selectedWeapon,
             selectedTalents,
             selectedRunes,
-            headShotPercentSliderValue
+            headShotPercentSliderValue,
+            chanceToHit
           ),
           totalEnemyHealth,
           selectedWeapon.fireRate
