@@ -9,6 +9,7 @@
     "concurrently": "^4.1.0",
     "cors": "^2.8.5",
     "express": "^4.16.4",
+    "fs": "0.0.1-security",
     "jquery": "^3.3.1",
     "mdbreact": "^4.11.0",
     "mongoose": "^5.4.18",
