@@ -13,7 +13,10 @@ const cors = require("cors");
 
 // this is our MongoDB database
 const dbRoute =
-  "mongodb+srv://public:FONzhZebD5zbavgs@cluster0-llmzd.mongodb.net/RealmRoyaleWeaponData?retryWrites=true";
+  //This is local DB
+  "mongodb://localhost:27017/RealmRoyaleWeaponData?retryWrites=true";
+  //This is Hosted DB
+  //"mongodb+srv://public:FONzhZebD5zbavgs@cluster0-llmzd.mongodb.net/RealmRoyaleWeaponData?retryWrites=true";
 
 // connects our back end code with the database
 mongoose.connect(dbRoute, { useNewUrlParser: true });

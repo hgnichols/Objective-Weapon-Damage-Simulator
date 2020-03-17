@@ -245,13 +245,13 @@ class WeaponDamageCalculator extends React.Component {
       selectedWeapon: [],
       selectedRunes: [],
       selectedTalents: [],
-      headShotPercentSliderValue: 0,
+      headShotPercentSliderValue: 20,
       totalEnemyHealth: 1500,
       classData: [],
       selectedClass: [],
       abilityData: [],
       selectedAbilities: [],
-      chanceToHit: 100,
+      chanceToHit: 50,
       };
     this.handleHeadShotPercentSliderOnChange = this.handleHeadShotPercentSliderOnChange.bind(this);
   }
@@ -263,6 +263,10 @@ class WeaponDamageCalculator extends React.Component {
       this.setState({ weaponData: data[0] });
       this.setState({ runeData: data[2] });
       this.setState({ talentData: data[1] });
+    }).then(() =>  {
+      if(this.getDataByName("Weapons").length > 0) {
+        this.setSelectedWeapon(this.getDataByName("Weapons").find(element => (element.name == "Assault Rifle" && element.rarity == "Common")));
+      };
     });
   }
 
@@ -664,13 +668,108 @@ class WeaponDamageCalculator extends React.Component {
     });
   };
 
-  calculateTTK = (dps, enemyTotalHealth, fireRate) => {
+  calculateHeadShotsHitAndBodyShotsHit = (enemyTotalHealth, weaponDamage, chanceToHeadshotAsPercent, chanceToHitAsPercent) => {
+    var headshotDamage = weaponDamage + weaponDamage * 0.5;
+    //headshotChance Exists IRL as the number of shots hit that were headshots i.e headshotsHit/shotsHit = headshotChance
+    //It can also be the number of headshots hit out of your total shots fired i.e headshotsHit/totalShotsFired = headshotChance
+    var headshotChanceAsValue = chanceToHeadshotAsPercent / 100;
+    var hitChanceAsValue = chanceToHitAsPercent / 100;
+
+    var bodyShotsRequiredToKill = enemyTotalHealth / weaponDamage 
+    var bodyshotsFiredIfAllBodyShots = Math.round(bodyShotsRequiredToKill * (1 + hitChanceAsValue)); //??Math.ceil(bodyShotsTakenToKill * (hitChance) or Math.floor(bodyShotsTakenToKill * (hitChance)??
+    var headshotsHit = Math.ceil(bodyShotsRequiredToKill * headshotChanceAsValue);  //Could be floor or ceil should be opisite of body shot rounding
+    var numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot = weaponDamage/(headshotDamage - weaponDamage)
+    var lessBodyshotsBasedOnHeadshots = Math.floor(headshotsHit / numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot);
+    var bodyshotsFired = (bodyshotsFiredIfAllBodyShots - headshotsHit) - lessBodyshotsBasedOnHeadshots;
+
+    //might be neccissary one day
+    var headshotDamageDone = headshotsHit * headshotDamage;
+    var bodyshotDamageDone = (bodyShotsRequiredToKill - headshotsHit) * weaponDamage;
+    var totalDamageDone = headshotDamageDone + bodyshotDamageDone;
+
+    return  {bodyshots: bodyshotsFired, headshots: headshotsHit};  
+  };
+
+  calculateHeadShotsHitAndBodyShotsFiredToKillATarget = (enemyTotalHealth, weaponDamage, chanceToHeadshotAsPercent, chanceToHitAsPercent) => { 
+    var headshotDamage = weaponDamage + weaponDamage * 0.5;
+    //It can also be the number of headshots hit out of your total shots fired i.e headshotsHit/totalShotsFired = headshotChance
+    var headshotChanceAsValue = chanceToHeadshotAsPercent / 100;
+    var hitChanceAsValue = chanceToHitAsPercent / 100;
+
+    var minimumNumberOfbodyShotsRequiredToKill = enemyTotalHealth / weaponDamage;
+    var bodyshotsFiredIfAllBodyShots = minimumNumberOfbodyShotsRequiredToKill * (1 + hitChanceAsValue); //??Math.ceil(bodyShotsTakenToKill * (hitChance) or Math.floor(bodyShotsTakenToKill * (hitChance)??
+    var headshotsHit = bodyshotsFiredIfAllBodyShots * headshotChanceAsValue;  //Could be floor or ceil should be opisite of body shot rounding
+    var numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot = weaponDamage/(headshotDamage - weaponDamage)
+    var lessBodyshotsBasedOnHeadshots = headshotsHit / numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot;
+    var bodyshotsFired = Math.round(bodyshotsFiredIfAllBodyShots) - Math.round(headshotsHit) - Math.round(lessBodyshotsBasedOnHeadshots);
+
+    //might be neccissary one day
+    var headshotDamageDone = headshotsHit * headshotDamage;
+    var bodyshotDamageDone = (minimumNumberOfbodyShotsRequiredToKill - headshotsHit) * weaponDamage;
+    var totalDamageDone = headshotDamageDone + bodyshotDamageDone;
+
+    return  {bodyshots: bodyshotsFired, headshots: headshotsHit};  
+  };
+
+  calculateTTK = (enemyTotalHealth, selectedWeapon, headShotPercentSliderValue, chanceToHit) => {
+    //* **All following info was for first try!*** */
+    //ps dont count the first shot its a point 0 so its number of shots required to kill - 1 
     //numbers of = number of shots required to kill
-    // Number of shots taken = 
-    //(numberOfHeadShots * headShotDamage) + (numberOfBodyShots * bodyShotDamage)
-    var rawTTK = enemyTotalHealth / dps;
-    var TTKTimesFR = rawTTK * fireRate;
-    return Math.ceil(TTKTimesFR) / fireRate;
+    //Number shot required to kill = Cieling(Health&Armor / DamageAfterModifiers)
+    /*(NormalRound(numberOfHeadShots * chanceToHit) * headShotDamage) + (NormalRound(numberOfBodyShots * chanceToHit) * bodyShotDamage) = 
+        amount of damage done with headshot/bodyshot and chance to hit */
+
+    /*
+    1500 = AHeadshotDamageDone + BBodyshotDamageDone
+    AHeadshotDamageDone = CNumberOfHeadshots * GHeadshotDamage(C) 
+    BBodyshotDamageDone = DNumberOfBodyshots * HBodyshotDamage(C)
+    CNumberOfHeadshots = EHeadshotChance(C) * FtotalShotsFired
+    DNumberOfBodyshots = iBodyshotChance(C) * FtotalShotsFired
+    FtotalShotsFired = CNumberOfHeadshots + DNumberOfBodyShots
+
+    jNumberOfHeadshotsHit = (iBodyshotChance(C) * EHeadshotChance(C)) * FtotalShotsFired
+    mPercentOfHeadshots = (iBodyshotChance(C) * EHeadshotChance(C))
+    lPercentOfBodyshots = 1 - (iBodyshotChance(C) * EHeadshotChance(C))
+    kNumberOfBodyshotsHit = FtotalShotsFired - jNumberOfHeadshotsHit
+    FtotalShotsFired = jNumberOfHeadshotsHit + kNumberOfBodyshotsHit
+    */
+
+    var headshotDamage = selectedWeapon.damage + selectedWeapon.damage * 0.5;
+    //headshotChance Exists IRL as the number of shots hit that were headshots i.e headshotsHit/shotsHit = headshotChance
+    //It can also be the number of headshots hit out of your total shots fired i.e headshotsHit/totalShotsFired = headshotChance
+    var headshotChance = headShotPercentSliderValue / 100;
+    var hitChance = chanceToHit / 100;
+    //2nd attempt
+    //shotsHit = hp / (-headshotChance * baseDamage + headshotChance * headshotDamage + headshotChance);
+    // var headshotDamage = selectedWeapon.damage + selectedWeapon.damage * 0.5;
+    // var negativeHeadshotChance = headshotChance * -1;
+    // var priorToTotalHealthDivision = ((negativeHeadshotChance * selectedWeapon.damage) + (headshotChance * headshotDamage) + selectedWeapon.damage);
+    // var actualCalculation = enemyTotalHealth/priorToTotalHealthDivision;
+    // var shotsHit = Math.ceil(actualCalculation);
+    //var ttk = shotsHit / selectedWeapon.fireRate;
+
+    //currently Only works for "out of total shots hit"
+    var bodyShotsRequiredToKill = enemyTotalHealth / selectedWeapon.damage 
+    var bodyshotsFiredIfAllBodyShots = Math.round(bodyShotsRequiredToKill * (1 + hitChance)); //??Math.ceil(bodyShotsTakenToKill * (hitChance) or Math.floor(bodyShotsTakenToKill * (hitChance)??
+    var headshotsHit = Math.ceil(bodyShotsRequiredToKill * headshotChance);  //Could be floor or ceil should be opisite of body shot rounding
+    var numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot = selectedWeapon.damage/(headshotDamage - selectedWeapon.damage)
+    var lessBodyshotsBasedOnHeadshots = Math.floor(headshotsHit / numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot);
+    var bodyshotsFired = (bodyshotsFiredIfAllBodyShots - headshotsHit) - lessBodyshotsBasedOnHeadshots;
+    //might be neccissary one day
+    var headshotDamageDone = headshotsHit * headshotDamage;
+    var bodyshotDamageDone = (bodyShotsRequiredToKill - headshotsHit) * selectedWeapon.damage;
+    var totalDamageDone = headshotDamageDone + bodyshotDamageDone;
+
+    var shotsFired = this.calculateHeadShotsHitAndBodyShotsFiredToKillATarget(enemyTotalHealth, selectedWeapon.damage, headShotPercentSliderValue, chanceToHit);
+    var ttk = (shotsFired.bodyshots + shotsFired.headshots) / selectedWeapon.fireRate;
+
+    //var ttk = (headshotsHit + bodyshotsFired) / selectedWeapon.fireRate;
+
+    //Original
+    // var rawTTK = enemyTotalHealth / dps;
+    // var TTKTimesFR = rawTTK * fireRate;
+    // return Math.ceil(TTKTimesFR) / fireRate;
+    return ttk;
   };
 
   setClassButtonColor = (className) => {
@@ -791,16 +890,11 @@ class WeaponDamageCalculator extends React.Component {
       />,
       <CalculatedInfo
         text={"Time To Kill"}
-        value={this.formatNumberByTwoDecimalPoints(this.calculateTTK(
-          this.calculateDPS(
-            selectedWeapon,
-            selectedTalents,
-            selectedRunes,
-            headShotPercentSliderValue,
-            chanceToHit
-          ),
+        value={this.formatNumberByTwoDecimalPoints(this.calculateTTK(         
           totalEnemyHealth,
-          selectedWeapon.fireRate
+          selectedWeapon,
+          headShotPercentSliderValue,
+          chanceToHit,
         ))}
         unit={"Seconds"}
       />
