@@ -5,6 +5,16 @@ import Slider from "react-rangeslider";
 import { Button } from "react-bootstrap";
 import { loadData } from "./DataHandler";
 
+class App extends Component {
+  render() {
+    return (
+      <div className="App">
+        <WeaponDamageCalculator />
+      </div>
+    );
+  }
+}
+
 function contentEditable(WrappedComponent) {
   return class extends React.Component {
     state = {
@@ -90,16 +100,6 @@ function contentEditable(WrappedComponent) {
       );
     }
   };
-}
-
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <WeaponDamageCalculator />
-      </div>
-    );
-  }
 }
 
 const ChoiceContainerColumn = props => {
@@ -697,11 +697,11 @@ class WeaponDamageCalculator extends React.Component {
     var hitChanceAsValue = chanceToHitAsPercent / 100;
 
     var minimumNumberOfbodyShotsRequiredToKill = enemyTotalHealth / weaponDamage;
-    var bodyshotsFiredIfAllBodyShots = minimumNumberOfbodyShotsRequiredToKill * (1 + hitChanceAsValue); //??Math.ceil(bodyShotsTakenToKill * (hitChance) or Math.floor(bodyShotsTakenToKill * (hitChance)??
+    var bodyshotsFiredIfAllBodyShots = (minimumNumberOfbodyShotsRequiredToKill / hitChanceAsValue); //??Math.ceil(bodyShotsTakenToKill * (hitChance) or Math.floor(bodyShotsTakenToKill * (hitChance)??
     var headshotsHit = bodyshotsFiredIfAllBodyShots * headshotChanceAsValue;  //Could be floor or ceil should be opisite of body shot rounding
     var numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot = weaponDamage/(headshotDamage - weaponDamage)
     var lessBodyshotsBasedOnHeadshots = headshotsHit / numberOfHeadshotsRequiredToIncreaseDamageDoneByAtLeastABodyShot;
-    var bodyshotsFired = Math.round(bodyshotsFiredIfAllBodyShots) - Math.round(headshotsHit) - Math.round(lessBodyshotsBasedOnHeadshots);
+    var bodyshotsFired = bodyshotsFiredIfAllBodyShots - headshotsHit - lessBodyshotsBasedOnHeadshots //need to calculate headshot increase;
 
     //might be neccissary one day
     var headshotDamageDone = headshotsHit * headshotDamage;
